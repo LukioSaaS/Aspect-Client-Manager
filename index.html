@@ -11,7 +11,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Clientes">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f2f5f7;--card:#fff;--ink:#12212b;--mute:#5b6d79;--line:#dbe3e8;--accent:#0b6b5f;--on:#fff;--ok:#1b7f4b;--okbg:#ddf2e5;--warn:#8f5200;--warnbg:#fcefcf;--bad:#b3261e;--badbg:#fbe1de;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -60,23 +59,14 @@ dialog h2{margin:0 0 4px;font-size:18px}
 .pick b{display:block}.pick span{color:var(--mute);font-size:13px}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-weight:700;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
 #toast.on{opacity:1}
-.hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.hd h1{margin:0}.hr{display:flex;align-items:center;gap:8px}#sync{font-size:12px;color:var(--mute)}
-#login{min-height:85vh;display:grid;place-items:center;padding:20px}.lbox{width:min(380px,100%);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}.lbox h1{margin-bottom:4px}
+.hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.hd h1{margin:0}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
-<div id="login"><form id="lf" class="lbox">
-  <h1>Meus clientes</h1><p class="hint">Entre para acessar seus clientes em qualquer aparelho.</p>
-  <label for="l-email">E-mail</label><input id="l-email" type="email" autocomplete="username" required>
-  <label for="l-pass">Senha</label><input id="l-pass" type="password" autocomplete="current-password" minlength="6" required>
-  <p id="lmsg" class="meta" role="alert"></p>
-  <button class="btn pri" id="lgo" type="submit" style="width:100%;margin-top:8px">Entrar</button>
-  <button class="btn" id="ltoggle" type="button" style="width:100%;margin-top:8px">Criar conta</button>
-</form></div>
-<div id="app" hidden>
+<div id="app">
 <header>
-  <div class="hd"><h1>Meus clientes</h1><div class="hr"><span id="sync"></span><button class="btn" data-act="logout">Sair</button></div></div>
+  <div class="hd"><h1>Meus clientes</h1></div>
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" data-tab="c" aria-selected="true">Clientes</button>
     <button class="tab" role="tab" data-tab="m" aria-selected="false">Mensagens</button>
@@ -150,67 +140,11 @@ const defaults=()=>({clients:[],alertDays:7,templates:[
 {id:'t5',t:'Boas-vindas',x:'Seja bem-vindo(a), {nome}! Seu acesso ao {app} no plano {plano} está ativo até {vencimento}.'}]});
 let db=defaults();
 const ui={filter:'todos',q:'',del:null,editC:null,editT:null,sendId:null};
-const SUPABASE_URL='https://ihjxosbyfystuokhrczm.supabase.co/';
-const SUPABASE_KEY='sb_publishable_HhZAfOs5_Mqre2e-Vyc7_A_KZmi2FEd';
-let sb=null,user=null,saveT=null,pending=false,signup=false;
 const validDb=o=>o&&Array.isArray(o.clients)&&Array.isArray(o.templates);
-const cacheKey=()=>KEY+':'+(user?user.id:'');
-const setSync=t=>{$('#sync').textContent=t};
-function cacheSet(){try{localStorage.setItem(cacheKey(),JSON.stringify(db))}catch(e){}}
-function save(){cacheSet();pending=true;setSync('Salvando…');clearTimeout(saveT);saveT=setTimeout(push,500)}
-async function push(){
-  if(!sb||!user)return;
-  try{
-    const{error}=await sb.from('app_data').upsert({user_id:user.id,data:db,updated_at:new Date().toISOString()});
-    if(error)throw error;
-    pending=false;setSync('Salvo na nuvem');
-  }catch(e){setSync('Sem conexão. Tentando de novo…');clearTimeout(saveT);saveT=setTimeout(push,8000)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}}
+function load(){
+  try{const s=localStorage.getItem(KEY);if(s){const o=JSON.parse(s);if(validDb(o))db=Object.assign(defaults(),o)}}catch(e){}
 }
-async function pull(){
-  try{
-    const{data,error}=await sb.from('app_data').select('data').eq('user_id',user.id).maybeSingle();
-    if(error)throw error;
-    if(data&&validDb(data.data)){db=Object.assign(defaults(),data.data);cacheSet();setSync('Salvo na nuvem')}
-    else{db=defaults();save()}
-  }catch(e){
-    try{const s=localStorage.getItem(cacheKey());if(s){const o=JSON.parse(s);if(validDb(o))db=Object.assign(defaults(),o)}}catch(_){}
-    setSync('Offline. Dados deste aparelho');
-  }
-}
-async function enter(session){
-  user=session.user;$('#login').hidden=true;$('#app').hidden=false;
-  await pull();render();
-}
-async function logout(){
-  try{localStorage.removeItem(cacheKey())}catch(e){}
-  try{await sb.auth.signOut()}catch(e){}
-  user=null;db=defaults();$('#l-pass').value='';$('#app').hidden=true;$('#login').hidden=false;
-}
-async function boot(){
-  if(!window.supabase||SUPABASE_URL.startsWith('COLE')){$('#lmsg').textContent='Falta configurar o Supabase no arquivo index.html (veja o LEIA-ME).';return}
-  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-  try{const{data}=await sb.auth.getSession();if(data.session)enter(data.session)}catch(e){}
-}
-$('#lf').addEventListener('submit',async e=>{
-  e.preventDefault();
-  if(!sb)return;
-  const email=$('#l-email').value.trim(),password=$('#l-pass').value;
-  $('#lmsg').textContent='Aguarde…';
-  try{
-    const r=signup?await sb.auth.signUp({email,password}):await sb.auth.signInWithPassword({email,password});
-    if(r.error){$('#lmsg').textContent=/Invalid login/i.test(r.error.message)?'E-mail ou senha incorretos.':r.error.message;return}
-    if(r.data.session){$('#lmsg').textContent='';enter(r.data.session)}
-    else $('#lmsg').textContent='Conta criada. Confirme o e-mail que enviamos e depois entre.';
-  }catch(err){$('#lmsg').textContent='Sem conexão. Tente de novo.'}
-});
-$('#ltoggle').addEventListener('click',()=>{
-  signup=!signup;
-  $('#lgo').textContent=signup?'Criar conta':'Entrar';
-  $('#ltoggle').textContent=signup?'Já tenho conta':'Criar conta';
-  $('#l-pass').autocomplete=signup?'new-password':'current-password';
-  $('#lmsg').textContent='';
-});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&!pending)pull().then(render)});
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Math.random().toString(36).slice(2,10);
@@ -291,7 +225,6 @@ document.addEventListener('click',e=>{
   else if(a==='tedit')openTpl(id);
   else if(a==='tcopy'){const t=db.templates.find(x=>x.id===id);if(t)copy(t.x)}
   else if(a==='tdel'){if(ui.del===id){db.templates=db.templates.filter(t=>t.id!==id);ui.del=null;save();toast('Mensagem excluída')}else ui.del=id;render()}
-  else if(a==='logout')logout();
   else if(a==='close')b.closest('dialog').close();
   else if(a==='backup'){$('#bk').value=JSON.stringify(db);$('#db').showModal()}
   else if(a==='bkcopy')copy($('#bk').value);
@@ -311,7 +244,7 @@ $('#ft').addEventListener('submit',e=>{
 });
 $('#q').addEventListener('input',e=>{ui.q=e.target.value;renderClients()});
 $('#ad').addEventListener('change',e=>{const n=parseInt(e.target.value,10);db.alertDays=n>0?Math.min(n,90):7;save();renderClients()});
-render();boot();
+load();render();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})});
 </script>
 </body>
