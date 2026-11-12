@@ -150,7 +150,7 @@ const defaults=()=>({clients:[],alertDays:7,templates:[
 {id:'t5',t:'Boas-vindas',x:'Seja bem-vindo(a), {nome}! Seu acesso ao {app} no plano {plano} está ativo até {vencimento}.'}]});
 let db=defaults();
 const ui={filter:'todos',q:'',del:null,editC:null,editT:null,sendId:null};
-const SUPABASE_URL='https://ihjxosbyfystuokhrczm.supabase.co/';
+const SUPABASE_URL='https://ihjxosbyfystuokhrczm.supabase.co';
 const SUPABASE_KEY='sb_publishable_HhZAfOs5_Mqre2e-Vyc7_A_KZmi2FEd';
 let sb=null,user=null,saveT=null,pending=false,signup=false;
 const validDb=o=>o&&Array.isArray(o.clients)&&Array.isArray(o.templates);
