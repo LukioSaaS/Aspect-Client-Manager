@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meus clientes</title>
+<meta name="theme-color" content="#0b6b5f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Clientes">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f7;--card:#fff;--ink:#12212b;--mute:#5b6d79;--line:#dbe3e8;--accent:#0b6b5f;--on:#fff;--ok:#1b7f4b;--okbg:#ddf2e5;--warn:#8f5200;--warnbg:#fcefcf;--bad:#b3261e;--badbg:#fbe1de;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e191f;--card:#16242c;--ink:#e8f0f4;--mute:#9db0bb;--line:#263944;--accent:#3cc2ae;--on:#04231e;--ok:#6fd69b;--okbg:#143828;--warn:#f2c46b;--warnbg:#3b2f10;--bad:#ff9d96;--badbg:#431a18;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e191f;--card:#16242c;--ink:#e8f0f4;--mute:#9db0bb;--line:#263944;--accent:#3cc2ae;--on:#04231e;--ok:#6fd69b;--okbg:#143828;--warn:#f2c46b;--warnbg:#3b2f10;--bad:#ff9d96;--badbg:#431a18;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 "Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);padding:14px 16px 0;border-bottom:1px solid var(--line)}
+h1{margin:0 0 10px;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.tabs{display:flex;gap:4px}
+.tab{flex:1;border:0;background:none;color:var(--mute);font:700 15px inherit;font-family:inherit;padding:10px 0;border-bottom:3px solid transparent;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--accent);border-color:var(--accent)}
+main{max-width:720px;margin:0 auto;padding:14px 16px 40px}
+.bar{display:flex;gap:8px;margin-bottom:12px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+textarea{min-height:110px;resize:vertical}
+label{display:block;font-weight:700;font-size:13px;margin:12px 0 4px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:700 14px inherit;font-family:inherit;padding:9px 13px;border-radius:10px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn.pri{background:var(--accent);color:var(--on);border-color:var(--accent)}
+.btn.wa{background:#1fa855;color:#fff;border-color:#1fa855}
+.btn.del{color:var(--bad)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);font:700 13px inherit;font-family:inherit;padding:7px 12px;border-radius:99px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;border-left-width:5px}
+.card.ok{border-left-color:var(--ok)}.card.warn{border-left-color:var(--warn)}.card.bad{border-left-color:var(--bad)}.card.sem{border-left-color:var(--line)}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.nome{font-weight:800;font-size:17px;margin:0;word-break:break-word}
+.meta{color:var(--mute);font-size:14px;margin:2px 0 0}
+.badge{flex:none;font-weight:800;font-size:13px;padding:5px 10px;border-radius:99px;text-align:center}
+.badge.ok{background:var(--okbg);color:var(--ok)}.badge.warn{background:var(--warnbg);color:var(--warn)}.badge.bad{background:var(--badbg);color:var(--bad)}.badge.sem{background:var(--line);color:var(--mute)}
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.empty{text-align:center;color:var(--mute);padding:36px 10px}
+.set{display:flex;align-items:center;gap:10px;margin-top:18px;color:var(--mute);font-size:14px}
+.set input{width:70px}
+.tpl p{white-space:pre-wrap;margin:6px 0 0;word-break:break-word}
+.hint{color:var(--mute);font-size:13px;margin:0 0 12px}
+dialog{width:min(520px,calc(100% - 24px));max-height:calc(100% - 24px);border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);padding:18px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h2{margin:0 0 4px;font-size:18px}
+.row{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.pick{display:block;text-decoration:none;color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px}
+.pick b{display:block}.pick span{color:var(--mute);font-size:13px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-weight:700;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+#toast.on{opacity:1}
+.hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}.hd h1{margin:0}.hr{display:flex;align-items:center;gap:8px}#sync{font-size:12px;color:var(--mute)}
+#login{min-height:85vh;display:grid;place-items:center;padding:20px}.lbox{width:min(380px,100%);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}.lbox h1{margin-bottom:4px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="login"><form id="lf" class="lbox">
+  <h1>Meus clientes</h1><p class="hint">Entre para acessar seus clientes em qualquer aparelho.</p>
+  <label for="l-email">E-mail</label><input id="l-email" type="email" autocomplete="username" required>
+  <label for="l-pass">Senha</label><input id="l-pass" type="password" autocomplete="current-password" minlength="6" required>
+  <p id="lmsg" class="meta" role="alert"></p>
+  <button class="btn pri" id="lgo" type="submit" style="width:100%;margin-top:8px">Entrar</button>
+  <button class="btn" id="ltoggle" type="button" style="width:100%;margin-top:8px">Criar conta</button>
+</form></div>
+<div id="app" hidden>
+<header>
+  <div class="hd"><h1>Meus clientes</h1><div class="hr"><span id="sync"></span><button class="btn" data-act="logout">Sair</button></div></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="c" aria-selected="true">Clientes</button>
+    <button class="tab" role="tab" data-tab="m" aria-selected="false">Mensagens</button>
+  </div>
+</header>
+<main>
+  <section id="vc">
+    <div class="bar">
+      <input id="q" type="search" placeholder="Buscar por nome, telefone, plano ou app" aria-label="Buscar">
+      <button class="btn pri" data-act="new">Novo cliente</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div id="list"></div>
+    <div class="set">
+      <span>Alertar quando faltarem até</span><input id="ad" type="number" min="1" max="90" aria-label="Dias de alerta"><span>dias</span>
+    </div>
+    <div class="acts"><button class="btn" data-act="backup">Backup dos dados</button></div>
+  </section>
+  <section id="vm" hidden>
+    <p class="hint">Toque em “Copiar” para usar a mensagem. Variáveis que o app preenche ao enviar pelo cliente: {nome} {plano} {app} {vencimento} {dias}</p>
+    <div class="bar"><button class="btn pri" data-act="newtpl">Nova mensagem</button></div>
+    <div id="tpls"></div>
+  </section>
+</main>
+</div>
+
+<dialog id="dc">
+  <form id="fc">
+    <h2 id="dct">Novo cliente</h2>
+    <label for="f-nome">Nome</label><input id="f-nome" required autocomplete="off">
+    <label for="f-tel">Telefone (com DDD)</label><input id="f-tel" type="tel" inputmode="tel" placeholder="(11) 91234-5678" required>
+    <label for="f-plano">Plano da assinatura</label><input id="f-plano" list="dl-plano" placeholder="Ex.: Mensal, Anual" autocomplete="off">
+    <label for="f-app">Aplicativo da assinatura</label><input id="f-app" list="dl-app" autocomplete="off">
+    <label for="f-venc">Vencimento do plano</label><input id="f-venc" type="date" required>
+    <datalist id="dl-plano"></datalist><datalist id="dl-app"></datalist>
+    <div class="row"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn pri" type="submit">Salvar cliente</button></div>
+  </form>
+</dialog>
+
+<dialog id="dt">
+  <form id="ft">
+    <h2 id="dtt">Nova mensagem</h2>
+    <label for="t-tit">Título</label><input id="t-tit" required autocomplete="off">
+    <label for="t-txt">Texto</label><textarea id="t-txt" required></textarea>
+    <div class="row"><button type="button" class="btn" data-act="close">Cancelar</button><button class="btn pri" type="submit">Salvar mensagem</button></div>
+  </form>
+</dialog>
+
+<dialog id="dp">
+  <h2>Enviar mensagem pronta</h2>
+  <p class="hint" id="dpn"></p>
+  <div id="dpl"></div>
+  <div class="row"><button type="button" class="btn" data-act="close">Fechar</button></div>
+</dialog>
+
+<dialog id="db">
+  <h2>Backup dos dados</h2>
+  <p class="hint">Os dados ficam salvos neste navegador. Copie este texto e guarde-o para restaurar depois ou em outro aparelho.</p>
+  <textarea id="bk" style="min-height:160px"></textarea>
+  <div class="row"><button type="button" class="btn" data-act="close">Fechar</button><button type="button" class="btn" data-act="bkcopy">Copiar</button><button type="button" class="btn pri" data-act="bkrestore">Restaurar deste texto</button></div>
+</dialog>
+<div id="toast" role="status"></div>
+
+<script>
+const KEY='gestao-clientes-v1';
+const defaults=()=>({clients:[],alertDays:7,templates:[
+{id:'t1',t:'Aviso de vencimento',x:'Olá, {nome}! Passando para avisar que sua assinatura {plano} do {app} vence em {vencimento} ({dias}). Posso renovar para você?'},
+{id:'t2',t:'Vence hoje',x:'Oi, {nome}! Sua assinatura do {app} vence hoje. Quer renovar agora para não ficar sem acesso?'},
+{id:'t3',t:'Plano vencido',x:'Olá, {nome}! Sua assinatura {plano} do {app} venceu em {vencimento}. Vamos regularizar para reativar seu acesso?'},
+{id:'t4',t:'Renovação confirmada',x:'Pronto, {nome}! Renovação confirmada. Seu plano {plano} no {app} agora vai até {vencimento}. Obrigado!'},
+{id:'t5',t:'Boas-vindas',x:'Seja bem-vindo(a), {nome}! Seu acesso ao {app} no plano {plano} está ativo até {vencimento}.'}]});
+let db=defaults();
+const ui={filter:'todos',q:'',del:null,editC:null,editT:null,sendId:null};
+const SUPABASE_URL='https://ihjxosbyfystuokhrczm.supabase.co/';
+const SUPABASE_KEY='sb_publishable_HhZAfOs5_Mqre2e-Vyc7_A_KZmi2FEd';
+let sb=null,user=null,saveT=null,pending=false,signup=false;
+const validDb=o=>o&&Array.isArray(o.clients)&&Array.isArray(o.templates);
+const cacheKey=()=>KEY+':'+(user?user.id:'');
+const setSync=t=>{$('#sync').textContent=t};
+function cacheSet(){try{localStorage.setItem(cacheKey(),JSON.stringify(db))}catch(e){}}
+function save(){cacheSet();pending=true;setSync('Salvando…');clearTimeout(saveT);saveT=setTimeout(push,500)}
+async function push(){
+  if(!sb||!user)return;
+  try{
+    const{error}=await sb.from('app_data').upsert({user_id:user.id,data:db,updated_at:new Date().toISOString()});
+    if(error)throw error;
+    pending=false;setSync('Salvo na nuvem');
+  }catch(e){setSync('Sem conexão. Tentando de novo…');clearTimeout(saveT);saveT=setTimeout(push,8000)}
+}
+async function pull(){
+  try{
+    const{data,error}=await sb.from('app_data').select('data').eq('user_id',user.id).maybeSingle();
+    if(error)throw error;
+    if(data&&validDb(data.data)){db=Object.assign(defaults(),data.data);cacheSet();setSync('Salvo na nuvem')}
+    else{db=defaults();save()}
+  }catch(e){
+    try{const s=localStorage.getItem(cacheKey());if(s){const o=JSON.parse(s);if(validDb(o))db=Object.assign(defaults(),o)}}catch(_){}
+    setSync('Offline. Dados deste aparelho');
+  }
+}
+async function enter(session){
+  user=session.user;$('#login').hidden=true;$('#app').hidden=false;
+  await pull();render();
+}
+async function logout(){
+  try{localStorage.removeItem(cacheKey())}catch(e){}
+  try{await sb.auth.signOut()}catch(e){}
+  user=null;db=defaults();$('#l-pass').value='';$('#app').hidden=true;$('#login').hidden=false;
+}
+async function boot(){
+  if(!window.supabase||SUPABASE_URL.startsWith('COLE')){$('#lmsg').textContent='Falta configurar o Supabase no arquivo index.html (veja o LEIA-ME).';return}
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  try{const{data}=await sb.auth.getSession();if(data.session)enter(data.session)}catch(e){}
+}
+$('#lf').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!sb)return;
+  const email=$('#l-email').value.trim(),password=$('#l-pass').value;
+  $('#lmsg').textContent='Aguarde…';
+  try{
+    const r=signup?await sb.auth.signUp({email,password}):await sb.auth.signInWithPassword({email,password});
+    if(r.error){$('#lmsg').textContent=/Invalid login/i.test(r.error.message)?'E-mail ou senha incorretos.':r.error.message;return}
+    if(r.data.session){$('#lmsg').textContent='';enter(r.data.session)}
+    else $('#lmsg').textContent='Conta criada. Confirme o e-mail que enviamos e depois entre.';
+  }catch(err){$('#lmsg').textContent='Sem conexão. Tente de novo.'}
+});
+$('#ltoggle').addEventListener('click',()=>{
+  signup=!signup;
+  $('#lgo').textContent=signup?'Criar conta':'Entrar';
+  $('#ltoggle').textContent=signup?'Já tenho conta':'Criar conta';
+  $('#l-pass').autocomplete=signup?'new-password':'current-password';
+  $('#lmsg').textContent='';
+});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&!pending)pull().then(render)});
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,10);
+const fmtDate=v=>v?v.split('-').reverse().join('/'):'sem data';
+function days(c){if(!c.venc)return null;const d=new Date(c.venc+'T00:00:00'),t=new Date();t.setHours(0,0,0,0);return Math.round((d-t)/864e5)}
+function status(c){const n=days(c);if(n===null)return'sem';if(n<0)return'bad';if(n<=db.alertDays)return'warn';return'ok'}
+function label(c){const n=days(c);if(n===null)return'Sem data';if(n<0)return'Vencido há '+(-n)+(n===-1?' dia':' dias');if(n===0)return'Vence hoje';if(n===1)return'Vence amanhã';return'Faltam '+n+' dias'}
+function waNum(t){let d=String(t).replace(/\D/g,'');if(d.length&&d.length<=11)d='55'+d;return d}
+function fill(x,c){const m={nome:c.nome,plano:c.plano||'—',app:c.app||'—',vencimento:fmtDate(c.venc),dias:label(c).toLowerCase()};return x.replace(/\{(\w+)\}/g,(a,k)=>k in m?m[k]:a)}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),1600)}
+async function copy(txt){try{await navigator.clipboard.writeText(txt)}catch(e){const a=document.createElement('textarea');a.value=txt;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(_){}a.remove()}toast('Copiado')}
+
+function renderClients(){
+  const all=db.clients.slice().sort((a,b)=>{const x=days(a),y=days(b);return (x===null)-(y===null)||x-y});
+  const cnt={todos:all.length,bad:0,warn:0,ok:0};all.forEach(c=>{const s=status(c);if(cnt[s]!==undefined)cnt[s]++});
+  const fs=[['todos','Todos'],['bad','Vencidos'],['warn','A vencer'],['ok','Em dia']];
+  $('#chips').innerHTML=fs.map(([k,n])=>`<button class="chip" data-filter="${k}" aria-pressed="${ui.filter===k}">${n} (${cnt[k]})</button>`).join('');
+  const q=ui.q.trim().toLowerCase();
+  const list=all.filter(c=>(ui.filter==='todos'||status(c)===ui.filter)&&(!q||[c.nome,c.tel,c.plano,c.app].join(' ').toLowerCase().includes(q)));
+  $('#list').innerHTML=list.length?list.map(c=>{const s=status(c);return `<div class="card ${s}">
+    <div class="top"><div><p class="nome">${esc(c.nome)}</p><p class="meta">${esc(c.tel)}</p></div><div class="badge ${s}">${label(c)}</div></div>
+    <p class="meta">${esc(c.plano||'Sem plano')} · ${esc(c.app||'Sem app')} · vence em ${fmtDate(c.venc)}</p>
+    <div class="acts">
+      <a class="btn wa" href="https://wa.me/${waNum(c.tel)}" target="_blank" rel="noopener">WhatsApp</a>
+      <button class="btn" data-act="send" data-id="${c.id}">Com mensagem</button>
+      <button class="btn" data-act="renew" data-id="${c.id}">Renovar +30 dias</button>
+      <button class="btn" data-act="edit" data-id="${c.id}">Editar</button>
+      <button class="btn del" data-act="del" data-id="${c.id}">${ui.del===c.id?'Confirmar exclusão':'Excluir'}</button>
+    </div></div>`}).join(''):`<div class="empty">${db.clients.length?'Nenhum cliente neste filtro.':'Nenhum cliente ainda. Toque em “Novo cliente” para cadastrar o primeiro.'}</div>`;
+  $('#ad').value=db.alertDays;
+  const uniq=k=>[...new Set(db.clients.map(c=>c[k]).filter(Boolean))];
+  $('#dl-plano').innerHTML=uniq('plano').map(v=>`<option value="${esc(v)}">`).join('');
+  $('#dl-app').innerHTML=uniq('app').map(v=>`<option value="${esc(v)}">`).join('');
+}
+function renderTpls(){
+  $('#tpls').innerHTML=db.templates.length?db.templates.map(t=>`<div class="card tpl sem"><div class="top"><p class="nome">${esc(t.t)}</p></div><p>${esc(t.x)}</p>
+    <div class="acts"><button class="btn pri" data-act="tcopy" data-id="${t.id}">Copiar</button><button class="btn" data-act="tedit" data-id="${t.id}">Editar</button><button class="btn del" data-act="tdel" data-id="${t.id}">${ui.del===t.id?'Confirmar exclusão':'Excluir'}</button></div></div>`).join(''):'<div class="empty">Nenhuma mensagem. Toque em “Nova mensagem” para criar.</div>';
+}
+function render(){renderClients();renderTpls()}
+
+function openClient(id){
+  const c=db.clients.find(x=>x.id===id)||{nome:'',tel:'',plano:'',app:'',venc:''};ui.editC=id||null;
+  $('#dct').textContent=id?'Editar cliente':'Novo cliente';
+  $('#f-nome').value=c.nome;$('#f-tel').value=c.tel;$('#f-plano').value=c.plano;$('#f-app').value=c.app;$('#f-venc').value=c.venc;
+  $('#dc').showModal();
+}
+function openTpl(id){
+  const t=db.templates.find(x=>x.id===id)||{t:'',x:''};ui.editT=id||null;
+  $('#dtt').textContent=id?'Editar mensagem':'Nova mensagem';$('#t-tit').value=t.t;$('#t-txt').value=t.x;$('#dt').showModal();
+}
+function openSend(id){
+  const c=db.clients.find(x=>x.id===id);if(!c)return;
+  $('#dpn').textContent='Para '+c.nome+'. Escolha a mensagem e o WhatsApp abre com o texto pronto.';
+  $('#dpl').innerHTML=db.templates.map(t=>{const m=fill(t.x,c);return `<a class="pick" href="https://wa.me/${waNum(c.tel)}?text=${encodeURIComponent(m)}" target="_blank" rel="noopener"><b>${esc(t.t)}</b><span>${esc(m)}</span></a>`}).join('')||'<div class="empty">Crie mensagens na aba Mensagens.</div>';
+  $('#dp').showModal();
+}
+function renew(id){
+  const c=db.clients.find(x=>x.id===id);if(!c)return;
+  const t=new Date();t.setHours(0,0,0,0);let b=c.venc?new Date(c.venc+'T00:00:00'):t;if(b<t)b=t;
+  b.setDate(b.getDate()+30);
+  c.venc=b.getFullYear()+'-'+String(b.getMonth()+1).padStart(2,'0')+'-'+String(b.getDate()).padStart(2,'0');
+  save();render();toast('Renovado até '+fmtDate(c.venc));
+}
+
+document.addEventListener('click',e=>{
+  const tab=e.target.closest('[data-tab]');
+  if(tab){const k=tab.dataset.tab;document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b===tab));$('#vc').hidden=k!=='c';$('#vm').hidden=k!=='m';return}
+  const ch=e.target.closest('[data-filter]');if(ch){ui.filter=ch.dataset.filter;renderClients();return}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const a=b.dataset.act,id=b.dataset.id;
+  if(a!=='del'&&a!=='tdel'&&ui.del){ui.del=null;render()}
+  if(a==='new')openClient();
+  else if(a==='edit')openClient(id);
+  else if(a==='send')openSend(id);
+  else if(a==='renew')renew(id);
+  else if(a==='del'){if(ui.del===id){db.clients=db.clients.filter(c=>c.id!==id);ui.del=null;save();toast('Cliente excluído')}else ui.del=id;render()}
+  else if(a==='newtpl')openTpl();
+  else if(a==='tedit')openTpl(id);
+  else if(a==='tcopy'){const t=db.templates.find(x=>x.id===id);if(t)copy(t.x)}
+  else if(a==='tdel'){if(ui.del===id){db.templates=db.templates.filter(t=>t.id!==id);ui.del=null;save();toast('Mensagem excluída')}else ui.del=id;render()}
+  else if(a==='logout')logout();
+  else if(a==='close')b.closest('dialog').close();
+  else if(a==='backup'){$('#bk').value=JSON.stringify(db);$('#db').showModal()}
+  else if(a==='bkcopy')copy($('#bk').value);
+  else if(a==='bkrestore'){try{const o=JSON.parse($('#bk').value);if(!o||!Array.isArray(o.clients)||!Array.isArray(o.templates))throw 0;db=Object.assign(defaults(),o);save();render();$('#db').close();toast('Dados restaurados')}catch(_){toast('Texto de backup inválido')}}
+});
+$('#fc').addEventListener('submit',e=>{
+  e.preventDefault();
+  const v={nome:$('#f-nome').value.trim(),tel:$('#f-tel').value.trim(),plano:$('#f-plano').value.trim(),app:$('#f-app').value.trim(),venc:$('#f-venc').value};
+  if(ui.editC){Object.assign(db.clients.find(c=>c.id===ui.editC),v)}else db.clients.push(Object.assign({id:uid()},v));
+  save();render();$('#dc').close();toast('Cliente salvo');
+});
+$('#ft').addEventListener('submit',e=>{
+  e.preventDefault();
+  const v={t:$('#t-tit').value.trim(),x:$('#t-txt').value.trim()};
+  if(ui.editT){Object.assign(db.templates.find(t=>t.id===ui.editT),v)}else db.templates.push(Object.assign({id:uid()},v));
+  save();renderTpls();$('#dt').close();toast('Mensagem salva');
+});
+$('#q').addEventListener('input',e=>{ui.q=e.target.value;renderClients()});
+$('#ad').addEventListener('change',e=>{const n=parseInt(e.target.value,10);db.alertDays=n>0?Math.min(n,90):7;save();renderClients()});
+render();boot();
+if('serviceWorker' in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})});
+</script>
+</body>
+</html>
