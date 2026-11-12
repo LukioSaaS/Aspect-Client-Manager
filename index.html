@@ -67,7 +67,7 @@ dialog h2{margin:0 0 4px;font-size:18px}
 </head>
 <body>
 <div id="login"><form id="lf" class="lbox">
-  <h1>Meus clientes</h1><p class="hint">Entre para acessar seus clientes em qualquer aparelho.</p>
+  <h1>Meus clientes</h1><p class="hint">Entre para acessar seus clientes em qualquer aparelho. (v2)</p>
   <label for="l-email">E-mail</label><input id="l-email" type="email" autocomplete="username" required>
   <label for="l-pass">Senha</label><input id="l-pass" type="password" autocomplete="current-password" minlength="6" required>
   <p id="lmsg" class="meta" role="alert"></p>
@@ -141,6 +141,8 @@ dialog h2{margin:0 0 4px;font-size:18px}
 <div id="toast" role="status"></div>
 
 <script>
+const $=s=>document.querySelector(s);
+window.addEventListener('error',e=>{const m=$('#lmsg');if(m)m.textContent='Erro: '+e.message});
 const KEY='gestao-clientes-v1';
 const defaults=()=>({clients:[],alertDays:7,templates:[
 {id:'t1',t:'Aviso de vencimento',x:'Olá, {nome}! Passando para avisar que sua assinatura {plano} do {app} vence em {vencimento} ({dias}). Posso renovar para você?'},
@@ -193,7 +195,7 @@ async function boot(){
 }
 $('#lf').addEventListener('submit',async e=>{
   e.preventDefault();
-  if(!sb)return;
+  if(!sb){$('#lmsg').textContent='Sem conexão com o Supabase. Recarregue a página.';return}
   const email=$('#l-email').value.trim(),password=$('#l-pass').value;
   $('#lmsg').textContent='Aguarde…';
   try{
@@ -211,7 +213,6 @@ $('#ltoggle').addEventListener('click',()=>{
   $('#lmsg').textContent='';
 });
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&!pending)pull().then(render)});
-const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Math.random().toString(36).slice(2,10);
 const fmtDate=v=>v?v.split('-').reverse().join('/'):'sem data';
