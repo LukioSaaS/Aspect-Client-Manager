@@ -96,7 +96,7 @@ dialog h2{margin:0 0 4px;font-size:18px}
     <div class="acts"><button class="btn" data-act="backup">Backup dos dados</button></div>
   </section>
   <section id="vm" hidden>
-    <p class="hint">Toque em “Copiar” para usar a mensagem. Variáveis que o app preenche ao enviar pelo cliente: {nome} {plano} {app} {vencimento} {dias}</p>
+    <p class="hint">Toque em “Copiar” para usar a mensagem. Variáveis que o app preenche ao enviar pelo cliente: {nome} {plano} {valor} {app} {vencimento} {dias}</p>
     <div class="bar"><button class="btn pri" data-act="newtpl">Nova mensagem</button></div>
     <div id="tpls"></div>
   </section>
@@ -109,6 +109,7 @@ dialog h2{margin:0 0 4px;font-size:18px}
     <label for="f-nome">Nome</label><input id="f-nome" required autocomplete="off">
     <label for="f-tel">Telefone (com DDD)</label><input id="f-tel" type="tel" inputmode="tel" placeholder="(11) 91234-5678" required>
     <label for="f-plano">Plano da assinatura</label><input id="f-plano" list="dl-plano" placeholder="Ex.: Mensal, Anual" autocomplete="off">
+    <label for="f-valor">Valor do plano (R$)</label><input id="f-valor" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Ex.: 35.00">
     <label for="f-app">Aplicativo da assinatura</label><input id="f-app" list="dl-app" autocomplete="off">
     <label for="f-venc">Vencimento do plano</label><input id="f-venc" type="date" required>
     <datalist id="dl-plano"></datalist><datalist id="dl-app"></datalist>
@@ -215,12 +216,13 @@ $('#ltoggle').addEventListener('click',()=>{
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&!pending)pull().then(render)});
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Math.random().toString(36).slice(2,10);
+const money=v=>(v===''||v==null||isNaN(v))?'':Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const fmtDate=v=>v?v.split('-').reverse().join('/'):'sem data';
 function days(c){if(!c.venc)return null;const d=new Date(c.venc+'T00:00:00'),t=new Date();t.setHours(0,0,0,0);return Math.round((d-t)/864e5)}
 function status(c){const n=days(c);if(n===null)return'sem';if(n<0)return'bad';if(n<=db.alertDays)return'warn';return'ok'}
 function label(c){const n=days(c);if(n===null)return'Sem data';if(n<0)return'Vencido há '+(-n)+(n===-1?' dia':' dias');if(n===0)return'Vence hoje';if(n===1)return'Vence amanhã';return'Faltam '+n+' dias'}
 function waNum(t){let d=String(t).replace(/\D/g,'');if(d.length&&d.length<=11)d='55'+d;return d}
-function fill(x,c){const m={nome:c.nome,plano:c.plano||'—',app:c.app||'—',vencimento:fmtDate(c.venc),dias:label(c).toLowerCase()};return x.replace(/\{(\w+)\}/g,(a,k)=>k in m?m[k]:a)}
+function fill(x,c){const m={nome:c.nome,plano:c.plano||'—',valor:money(c.valor)||'—',app:c.app||'—',vencimento:fmtDate(c.venc),dias:label(c).toLowerCase()};return x.replace(/\{(\w+)\}/g,(a,k)=>k in m?m[k]:a)}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),1600)}
 async function copy(txt){try{await navigator.clipboard.writeText(txt)}catch(e){const a=document.createElement('textarea');a.value=txt;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(_){}a.remove()}toast('Copiado')}
 
@@ -233,11 +235,11 @@ function renderClients(){
   const list=all.filter(c=>(ui.filter==='todos'||status(c)===ui.filter)&&(!q||[c.nome,c.tel,c.plano,c.app].join(' ').toLowerCase().includes(q)));
   $('#list').innerHTML=list.length?list.map(c=>{const s=status(c);return `<div class="card ${s}">
     <div class="top"><div><p class="nome">${esc(c.nome)}</p><p class="meta">${esc(c.tel)}</p></div><div class="badge ${s}">${label(c)}</div></div>
-    <p class="meta">${esc(c.plano||'Sem plano')} · ${esc(c.app||'Sem app')} · vence em ${fmtDate(c.venc)}</p>
+    <p class="meta">${esc(c.plano||'Sem plano')}${money(c.valor)?' · '+money(c.valor):''} · ${esc(c.app||'Sem app')} · vence em ${fmtDate(c.venc)}</p>
     <div class="acts">
       <a class="btn wa" href="https://wa.me/${waNum(c.tel)}" target="_blank" rel="noopener">WhatsApp</a>
       <button class="btn" data-act="send" data-id="${c.id}">Com mensagem</button>
-      <button class="btn" data-act="renew" data-id="${c.id}">Renovar +30 dias</button>
+      <button class="btn" data-act="renew" data-id="${c.id}">Renovar +1 mês</button>
       <button class="btn" data-act="edit" data-id="${c.id}">Editar</button>
       <button class="btn del" data-act="del" data-id="${c.id}">${ui.del===c.id?'Confirmar exclusão':'Excluir'}</button>
     </div></div>`}).join(''):`<div class="empty">${db.clients.length?'Nenhum cliente neste filtro.':'Nenhum cliente ainda. Toque em “Novo cliente” para cadastrar o primeiro.'}</div>`;
@@ -253,9 +255,9 @@ function renderTpls(){
 function render(){renderClients();renderTpls()}
 
 function openClient(id){
-  const c=db.clients.find(x=>x.id===id)||{nome:'',tel:'',plano:'',app:'',venc:''};ui.editC=id||null;
+  const c=db.clients.find(x=>x.id===id)||{nome:'',tel:'',plano:'',valor:'',app:'',venc:''};ui.editC=id||null;
   $('#dct').textContent=id?'Editar cliente':'Novo cliente';
-  $('#f-nome').value=c.nome;$('#f-tel').value=c.tel;$('#f-plano').value=c.plano;$('#f-app').value=c.app;$('#f-venc').value=c.venc;
+  $('#f-nome').value=c.nome;$('#f-tel').value=c.tel;$('#f-plano').value=c.plano;$('#f-valor').value=c.valor==null?'':c.valor;$('#f-app').value=c.app;$('#f-venc').value=c.venc;
   $('#dc').showModal();
 }
 function openTpl(id){
@@ -268,12 +270,19 @@ function openSend(id){
   $('#dpl').innerHTML=db.templates.map(t=>{const m=fill(t.x,c);return `<a class="pick" href="https://wa.me/${waNum(c.tel)}?text=${encodeURIComponent(m)}" target="_blank" rel="noopener"><b>${esc(t.t)}</b><span>${esc(m)}</span></a>`}).join('')||'<div class="empty">Crie mensagens na aba Mensagens.</div>';
   $('#dp').showModal();
 }
+function addMonth(v){
+  const [y,m,d]=v.split('-').map(Number);
+  let ny=y,nm=m+1;if(nm>12){nm=1;ny++}
+  const nd=Math.min(d,new Date(ny,nm,0).getDate());
+  return ny+'-'+String(nm).padStart(2,'0')+'-'+String(nd).padStart(2,'0');
+}
 function renew(id){
   const c=db.clients.find(x=>x.id===id);if(!c)return;
-  const t=new Date();t.setHours(0,0,0,0);let b=c.venc?new Date(c.venc+'T00:00:00'):t;if(b<t)b=t;
-  b.setDate(b.getDate()+30);
-  c.venc=b.getFullYear()+'-'+String(b.getMonth()+1).padStart(2,'0')+'-'+String(b.getDate()).padStart(2,'0');
-  save();render();toast('Renovado até '+fmtDate(c.venc));
+  const t=new Date();
+  const today=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+  let v=addMonth(c.venc||today);
+  while(v<today)v=addMonth(v);
+  c.venc=v;save();render();toast('Renovado até '+fmtDate(v));
 }
 
 document.addEventListener('click',e=>{
@@ -300,7 +309,7 @@ document.addEventListener('click',e=>{
 });
 $('#fc').addEventListener('submit',e=>{
   e.preventDefault();
-  const v={nome:$('#f-nome').value.trim(),tel:$('#f-tel').value.trim(),plano:$('#f-plano').value.trim(),app:$('#f-app').value.trim(),venc:$('#f-venc').value};
+  const v={nome:$('#f-nome').value.trim(),tel:$('#f-tel').value.trim(),plano:$('#f-plano').value.trim(),valor:$('#f-valor').value===''?'':parseFloat($('#f-valor').value),app:$('#f-app').value.trim(),venc:$('#f-venc').value};
   if(ui.editC){Object.assign(db.clients.find(c=>c.id===ui.editC),v)}else db.clients.push(Object.assign({id:uid()},v));
   save();render();$('#dc').close();toast('Cliente salvo');
 });
